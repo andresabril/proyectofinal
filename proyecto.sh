@@ -1,9 +1,9 @@
 #!/bin/sh
 
-FILE='zenity --list \
+zenity --list \
                 --title="Que desea hacer?"\
                 --column="obciones"  \
-                unload\
+                unload \
 		download\
 		delete\
 		move\
@@ -12,7 +12,4 @@ FILE='zenity --list \
 		list\
 		share\
 		info\
-		unlink\
-case $? in
-	0)
-		echo "unload seleccionado"
+		unlink
