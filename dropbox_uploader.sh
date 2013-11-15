@@ -728,8 +728,7 @@ function db_download_file
 #Prints account info
 function db_account_info
 {
-    print "Dropbox Uploader v$VERSION\n\n"
-    print " > Getting info... "
+    print "Dropbox Uploader v$VERSION\n"
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -s --show-error --globoff -i -o "$RESPONSE_FILE" --data "oauth_consumer_key=$APPKEY&oauth_token=$OAUTH_ACCESS_TOKEN&oauth_signature_method=PLAINTEXT&oauth_signature=$APPSECRET%26$OAUTH_ACCESS_TOKEN_SECRET&oauth_timestamp=$(utime)&oauth_nonce=$RANDOM" "$API_INFO_URL" 2> /dev/null
     check_http_response
 
@@ -762,16 +761,17 @@ function db_account_info
         print "FAILED\n"
         ERROR_STATUS=1
     fi
+       
 }
 
 #Account unlink
 function db_unlink
-{
-    echo -ne "Are you sure you want unlink this script from your Dropbox account? [y/n]"
-    read answer
-    if [[ $answer == "y" ]]; then
+{	
+
+   answer=`zenity --entry --text="Are you sure you want unlink this script from your Dropbox account[yes/no]?"`
+    
+    if [[ $answer == "yes" ]]; then
         rm -fr "$CONFIG_FILE"
-        echo -ne "DONE\n"
     fi
 }
 
@@ -879,7 +879,6 @@ function db_list
 {
     local DIR_DST=$(normalize_path "$1")
 
-    print " > Listing \"$DIR_DST\"... "
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES -s --show-error --globoff -i -o "$RESPONSE_FILE" "$API_METADATA_URL/$ACCESS_LEVEL/$(urlencode "$DIR_DST")?oauth_consumer_key=$APPKEY&oauth_token=$OAUTH_ACCESS_TOKEN&oauth_signature_method=PLAINTEXT&oauth_signature=$APPSECRET%26$OAUTH_ACCESS_TOKEN_SECRET&oauth_timestamp=$(utime)&oauth_nonce=$RANDOM" 2> /dev/null
     check_http_response
 
@@ -891,7 +890,6 @@ function db_list
         #It's a directory
         if [[ $IS_DIR != "" ]]; then
 
-            print "DONE\n"
 
             #Extracting directory content [...]
             #and replacing "}, {" with "}\n{"
@@ -1073,7 +1071,20 @@ fi
 #### START  ####
 ################
 
-COMMAND=${@:$OPTIND:1}
+COMMAND=`zenity --list --title="proyecto final" --text="Select a operation" \
+    --width="800" --height="600"\
+     --radiolist \
+     --column="&" --column="Operation" \
+     FALSE "upload" \
+     FALSE "download"  \
+     FALSE "delete"  \
+     FALSE "move"  \
+     FALSE "copy"  \
+     FALSE "mkdir"  \
+     FALSE "list"   \
+     FALSE "share"   \
+     FALSE "info"   \
+     FALSE "unlink"   `
 ARG1=${@:$OPTIND+1:1}
 ARG2=${@:$OPTIND+2:1}
 
@@ -1082,8 +1093,8 @@ case $COMMAND in
 
     upload)
 
-        FILE_SRC=$ARG1
-        FILE_DST=$ARG2
+        FILE_SRC=`zenity --file-selection --title="Select your file" `
+        FILE_DST=`zenity --entry --title="select your dir" --text="folder"`
 
         #Checking FILE_SRC
         if [[ $FILE_SRC == "" ]]; then
@@ -1102,14 +1113,13 @@ case $COMMAND in
         fi
 
         db_upload "$FILE_SRC" "/$FILE_DST"
-
+	`zenity --info --text="your file is up"`
     ;;
 
     download)
 
-        FILE_SRC=$ARG1
-        FILE_DST=$ARG2
-
+        FILE_SRC=`zenity --entry --title="Write the file " --text="file"`
+        FILE_DST=`zenity --entry --title="Write destiny of your file" --text="directory"`
         #Checking FILE_SRC
         if [[ $FILE_SRC == "" ]]; then
             print "Error: invalid source file or directory"
@@ -1118,13 +1128,12 @@ case $COMMAND in
         fi
 
         db_download "/$FILE_SRC" "$FILE_DST"
-
+	`zenity --info --text="your file is down"`
     ;;
 
     share)
 
-        FILE_DST=$ARG1
-
+        FILE_DST=`zenity --entry --title="selec the file" --text="file"`
         #Checking FILE_DST
         if [[ $FILE_DST == "" ]]; then
             print "Error: Please specify the file to share"
@@ -1133,18 +1142,19 @@ case $COMMAND in
         fi
 
         db_share "/$FILE_DST"
-
+	`zenity --info --text="your file is share"`
     ;;
 
     info)
 
-        db_account_info
+        `zenity --info --text="$(db_account_info)"`
+
 
     ;;
 
     delete|remove)
 
-        FILE_DST=$ARG1
+        FILE_DST=`zenity --entry --title="Write the file to erase" --text="file"`
 
         #Checking FILE_DST
         if [[ $FILE_DST == "" ]]; then
@@ -1154,14 +1164,13 @@ case $COMMAND in
         fi
 
         db_delete "/$FILE_DST"
-
+	`zenity --info --text="your file is delete"`
     ;;
 
     move|rename)
 
-        FILE_SRC=$ARG1
-        FILE_DST=$ARG2
-
+        FILE_SRC=`zenity --entry --title="white the file" --text="file"`
+        FILE_DST=`zenity --entry --title="whrite the root" --text="directory"`
         #Checking FILE_SRC
         if [[ $FILE_SRC == "" ]]; then
             print "Error: Please specify the source file"
@@ -1177,14 +1186,13 @@ case $COMMAND in
         fi
 
         db_move "/$FILE_SRC" "/$FILE_DST"
-
+	`zenity --info --text="your file is move"`
     ;;
 
     copy)
 
-        FILE_SRC=$ARG1
-        FILE_DST=$ARG2
-
+        FILE_SRC=`zenity --entry --title="whrite the file" --text="file"`
+        FILE_DST=`zenity --entry --title="whrite the root" --text="directory"`
         #Checking FILE_SRC
         if [[ $FILE_SRC == "" ]]; then
             print "Error: Please specify the source file"
@@ -1200,12 +1208,12 @@ case $COMMAND in
         fi
 
         db_copy "/$FILE_SRC" "/$FILE_DST"
-
+	`zenity --info --text="your file is copy"`
     ;;
 
     mkdir)
 
-        DIR_DST=$ARG1
+        DIR_DST=`zenity --entry --title="whrite the directory" --text="directory"`
 
         #Checking DIR_DST
         if [[ $DIR_DST == "" ]]; then
@@ -1215,20 +1223,19 @@ case $COMMAND in
         fi
 
         db_mkdir "/$DIR_DST"
-
+	`zenity --info --text="your directory is done"`
     ;;
 
     list)
 
-        DIR_DST=$ARG1
-
+        DIR_DST=`zenity --entry --title="whrite the directory" --text="directory"`
+        
         #Checking DIR_DST
         if [[ $DIR_DST = "" ]]; then
             DIR_DST="/"
         fi
 
-        db_list "/$DIR_DST"
-
+	`zenity --info --title="list"  --text="$(db_list)"`
     ;;
 
     unlink)
@@ -1243,7 +1250,7 @@ case $COMMAND in
             print "Error: Unknown command: $COMMAND\n\n"
             ERROR_STATUS=1
         fi
-        usage
+
 
     ;;
 
